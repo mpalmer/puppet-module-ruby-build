@@ -9,7 +9,7 @@ fi
 
 BASEDIR="/usr/local/lib/rubies/${1}"
 
-if [ -e "${BASEDIR}/${1}/environment.sh" ]; then
+if [ -e "${BASEDIR}/environment.sh" ]; then
 	# We're already built, yippee!
 	exit 0
 fi
