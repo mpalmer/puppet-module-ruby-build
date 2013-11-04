@@ -1,0 +1,56 @@
+This branch contains Puppet manifests that allow you to install ruby-build
+onto a machine, and (possibly more importantly) specify that a given version
+of Ruby is to be installed and built -- all from within Puppet.  It also
+takes care of installing the necessary build dependencies for your Rubies.
+
+
+# Filesystem Environment
+
+This module installs things into the following locations:
+
+* `/usr/local/bin/ruby-build`: The actual `ruby-build` script. 
+  Potentially useful if you'd like to build a Ruby by hand (madness!)
+
+* `/usr/local/sbin/ruby-build-wrapper`: A small script that uses
+  `ruby-build` to install a Ruby, and then creates an `environment.sh` file
+  containing the environment variables required to enable that version of
+  Ruby.
+
+* `/usr/local/share/ruby_build`: The definitions that specify how to install
+  a given Ruby version.
+
+In addition, when a Ruby version is installed (using `ruby-build-wrapper` or
+`ruby_build::install`), the following files/directories are created:
+    
+* `/usr/local/lib/rubies/<version>`: A Ruby.
+
+* `/usr/local/lib/rubies/<version>/environment.sh`: A bourne shell fragment
+  which exports a set of environment variables, which (taken together) cause
+  the given version of Ruby to be enabled by default.
+
+
+# Global installation
+
+Simply
+
+    include ruby_build::base
+
+And you'll get all of the "generic" configuration done for you.  You can
+also leave this out if you're going to install a specific Ruby, because this
+class will be included for you.
+
+
+# Install You A Ruby
+
+Simply
+
+    ruby_build::install { "anything":
+        definition => "<definition>"
+    }
+
+This will use the definition file `<definition>` to build a Ruby and install
+it into `/usr/local/lib/rubies/<definition>`.  It will also install the
+`bundler` gem and write `/usr/local/lib/rubies/<definition>/environment.sh`,
+which includes a set of bourne shell environment variable definitions which,
+when included in a shell session, will activate that Ruby and make it
+available as the default in that shell.
