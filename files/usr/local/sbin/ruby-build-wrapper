@@ -7,6 +7,13 @@ if [ "$#" != "1" ]; then
 	exit 1
 fi
 
+pushd /usr/local/share/ruby-build
+if ! ls -1 | grep -Fxq "$1"; then
+	echo "No such available Ruby: ${1}" >&2
+	exit 1
+fi
+popd
+
 BASEDIR="/usr/local/lib/rubies/${1}"
 
 if [ -e "${BASEDIR}/environment.sh" ]; then
