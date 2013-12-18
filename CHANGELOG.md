@@ -1,5 +1,46 @@
 ## Version History
 
+#### 20131211
+* Fix extracting topaz-dev archive
+* Auto-detect and link to Homebrew's readline
+* Fix irb, rake, rdoc, ri for rbx-2.2.1
+
+#### 20131206
+* Added a definition for JRuby 1.7.9
+
+#### 20131122.1
+* Fix typo in 2.1.0-preview2 definition
+
+#### 20131122
+* Added a definition for 1.9.3-p484
+* Added a definition for 2.0.0-p353
+* Added a definition for 2.1.0-preview2
+
+#### 20131115
+* Added a definition for JRuby 1.7.7
+* Added a definition for JRuby 1.7.8
+
+#### 20131030
+* Install the Rubinius bundle in isolation
+* Fix false "BUILD FAILED" message when installing Rubinius
+* Fix installing REE on OS X 10.8+ with no XQuartz
+
+#### 20131028
+* Abort early for invalid TMPDIR
+* Enable compiling Ruby 1.8 on OS X 10.8+ without extra flags
+* Detect number of CPU cores used for `make`
+* Fix installing Ruby 2.1.0 from trunk
+* Install Rake and Bundler in isolation when required
+* Clearer error message when HTTP download fails
+* Set default MAKE=gmake on FreeBSD
+* Support relative path as install prefix
+* Use libyaml from Homebrew if available
+
+#### 20131024
+* Added a definition for JRuby 1.7.6
+* Added a definition for Rubinius 2.1.0
+* Added a definition for Rubinius 2.1.1
+
 #### 20131008
 * Added a definition for JRuby 1.7.5
 * Added a definition for Rubinius 2.0.0
