@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-RUBY_BUILD_VERSION="20131211"
+RUBY_BUILD_VERSION="20131225.1"
 
 set -E
 exec 3<&2 # preserve original stderr at fd 3
@@ -364,6 +364,8 @@ build_package() {
 
   echo "Installing ${package_name}..." >&2
 
+  [ -n "$HAS_PATCH" ] && apply_ruby_patch "$package_name"
+
   for command in $commands; do
     "build_package_${command}" "$package_name"
   done
@@ -505,12 +507,22 @@ build_package_jruby() {
   ln -fs jruby ruby
   install_jruby_launcher
   remove_windows_files
+  fix_jruby_shebangs
 }
 
 install_jruby_launcher() {
   cd "${PREFIX_PATH}/bin"
   { ./ruby gem install jruby-launcher
   } >&4 2>&1
+}
+
+fix_jruby_shebangs() {
+  for file in "${PREFIX_PATH}/bin"/*; do
+    if [ "$(head -c 20 "$file")" = "#!/usr/bin/env jruby" ]; then
+      sed -i.bak -E "1s:.+:#\!${PREFIX_PATH}/bin/jruby:" "$file"
+      rm "$file".bak
+    fi
+  done
 }
 
 remove_windows_files() {
@@ -783,13 +795,21 @@ isolated_gem_install() {
   gem install "$@"
 }
 
+apply_ruby_patch() {
+  case "$1" in
+  ruby-* | jruby-* | rubinius-* )
+    patch -p0 -i "${2:--}"
+    ;;
+  esac
+}
+
 version() {
   echo "ruby-build ${RUBY_BUILD_VERSION}"
 }
 
 usage() {
   { version
-    echo "usage: ruby-build [-k|--keep] [-v|--verbose] definition prefix"
+    echo "usage: ruby-build [-k|--keep] [-v|--verbose] [-p|--patch] definition prefix"
     echo "       ruby-build --definitions"
   } >&2
 
@@ -809,6 +829,7 @@ list_definitions() {
 
 unset VERBOSE
 unset KEEP_BUILD_PATH
+unset HAS_PATCH
 RUBY_BUILD_ROOT="$(abs_dirname "$0")/.."
 
 parse_options "$@"
@@ -820,6 +841,7 @@ for option in "${OPTIONS[@]}"; do
     { echo
       echo "  -k/--keep        Do not remove source tree after installation"
       echo "  -v/--verbose     Verbose mode: print compilation status to stdout"
+      echo "  -p/--patch       Apply a patch from stdin before building"
       echo "  --definitions    List all built-in definitions"
       echo
     } >&2
@@ -834,6 +856,9 @@ for option in "${OPTIONS[@]}"; do
     ;;
   "v" | "verbose" )
     VERBOSE=true
+    ;;
+  "p" | "patch" )
+    HAS_PATCH=true
     ;;
   "version" )
     version
