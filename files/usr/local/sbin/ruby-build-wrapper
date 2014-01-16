@@ -7,43 +7,22 @@ if [ "$#" != "1" ]; then
 	exit 1
 fi
 
-pushd /usr/local/share/ruby-build
+# Make sure someone isn't trying to do the dodgy on us by specifying a
+# version definition that would cause us to read /etc/shadow or something
+pushd /usr/local/share/ruby-build >/dev/null
 if ! ls -1 | grep -Fxq "$1"; then
 	echo "No such available Ruby: ${1}" >&2
 	exit 1
 fi
-popd
+popd >/dev/null
 
 BASEDIR="/usr/local/lib/rubies/${1}"
 
-if [ -e "${BASEDIR}/environment.sh" ]; then
+if [ -e "${BASEDIR}/bin/ruby" ]; then
 	# We're already built, yippee!
 	exit 0
 fi
 
 /usr/local/bin/ruby-build "$1" "$BASEDIR"
 
-cat <<EOF >"${BASEDIR}/environment.sh"
-PATH="${BASEDIR}/bin:\$PATH"; export PATH
-RUBY_VERSION="$1"; export RUBY_VERSION
-GEM_HOME="$BASEDIR"; export GEM_HOME
-GEM_PATH="$BASEDIR"; export GEM_PATH
-MY_RUBY_HOME="$BASEDIR"; export MY_RUBY_HOME
-EOF
-
-if [[ "$1" =~ ^maglev ]]; then
-	cat <<EOF >>"${BASEDIR}/environment.sh"
-MAGLEV_HOME="$BASEDIR"; export MAGLEV_HOME 
-GEMSTONE_GLOBAL_DIR="$BASEDIR"; export GEMSTONE_GLOBAL_DIR
-EOF
-else
-	cat <<EOF >>"${BASEDIR}/environment.sh"
-unset MAGLEV_HOME
-unset GEMSTONE_GLOBAL_DIR
-EOF
-fi
-
-# Let's test this out with a bundler install...
-source "${BASEDIR}/environment.sh"
-
-gem install bundler
+chruby-exec "$1" -- gem install bundler
