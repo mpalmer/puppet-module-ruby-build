@@ -35,6 +35,8 @@ define ruby_build::gem(
 		$source  = undef,
 		$docs    = false
 ) {
+	include chruby::install
+
 	if $version {
 		$version_opt = shellquote('-v', $version)
 	}
