@@ -7,6 +7,9 @@ of Ruby on UNIX-like systems.
 You can also use ruby-build without rbenv in environments where you need
 precise control over Ruby version installation.
 
+See the [list of releases](https://github.com/sstephenson/ruby-build/releases)
+for changes in each version.
+
 
 ## Installation
 
@@ -63,7 +66,7 @@ Or, if you would like to install the latest development release:
 To install a Ruby version for use with rbenv, run `rbenv install` with the
 exact name of the version you want to install. For example,
 
-    rbenv install 1.9.3-p448
+    rbenv install 2.1.0
 
 Ruby versions will be installed into a directory of the same name under
 `~/.rbenv/versions`.
@@ -81,7 +84,7 @@ locations.
 Run the `ruby-build` command with the exact name of the version you want to
 install and the full path where you want to install it. For example,
 
-    ruby-build 1.9.3-p448 ~/local/ruby-1.9.3-p448
+    ruby-build 2.1.0 ~/local/ruby-2.1.0
 
 To see a list of all available Ruby versions, run `ruby-build --definitions`.
 
@@ -119,9 +122,10 @@ You can set certain environment variables to control the build process.
 * `MAKE` lets you override the command to use for `make`. Useful for specifying
   GNU make (`gmake`) on some systems.
 * `MAKE_OPTS` (or `MAKEOPTS`) lets you pass additional options to `make`.
-* `RUBY_CONFIGURE_OPTS` and `RUBY_MAKE_OPTS` allow you to specify configure and
-  make options for buildling MRI. These variables will be passed to Ruby only,
-  not any dependent packages (e.g. libyaml).
+* `MAKE_INSTALL_OPTS` lets you pass additional options to `make install`.
+* `RUBY_CONFIGURE_OPTS`, `RUBY_MAKE_OPTS` and `RUBY_MAKE_INSTALL_OPTS` allow
+  you to specify configure and make options for buildling MRI. These variables
+  will be passed to Ruby only, not any dependent packages (e.g. libyaml).
 
 ### Applying patches to Ruby before compiling
 
@@ -144,8 +148,8 @@ $ cat fix1.patch fix2.patch | rbenv install --patch 1.9.3-p429
 
 ### Checksum verification
 
-If you have the `md5`, `openssl`, or `md5sum` tool installed, ruby-build will
-automatically verify the MD5 checksum of each downloaded package before
+If you have the `shasum`, `openssl`, or `sha256sum` tool installed, ruby-build will
+automatically verify the SHA2 checksum of each downloaded package before
 installing it.
 
 Checksums are optional and specified as anchors on the package URL in each
@@ -161,9 +165,9 @@ official URL specified in the definition file.
 You can point ruby-build to another mirror by specifying the
 `RUBY_BUILD_MIRROR_URL` environment variable--useful if you'd like to run your
 own local mirror, for example. Package mirror URLs are constructed by joining
-this variable with the MD5 checksum of the package file.
+this variable with the SHA2 checksum of the package file.
 
-If you don't have an MD5 program installed, ruby-build will skip the download
+If you don't have an SHA2 program installed, ruby-build will skip the download
 mirror and use official URLs instead. You can force ruby-build to bypass the
 mirror by setting the `RUBY_BUILD_SKIP_MIRROR` environment variable.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-RUBY_BUILD_VERSION="20131225.1"
+RUBY_BUILD_VERSION="20140702"
 
 set -E
 exec 3<&2 # preserve original stderr at fd 3
@@ -63,6 +63,12 @@ capitalize() {
 
 sanitize() {
   printf "%s" "$1" | sed "s/[^A-Za-z0-9.-]/_/g; s/__*/_/g"
+}
+
+colorize() {
+  if [ -t 1 ]; then printf "\e[%sm%s\e[m" "$1" "$2"
+  else echo -n "$2"
+  fi
 }
 
 build_failed() {
@@ -160,14 +166,31 @@ make_package() {
   popd >&4
 }
 
+compute_sha2() {
+  local output
+  if type shasum &>/dev/null; then
+    output="$(shasum -a 256 -b)" || return 1
+    echo "${output% *}"
+  elif type openssl &>/dev/null; then
+    output="$(openssl dgst -sha256)" || return 1
+    echo "${output##* }"
+  elif type sha256sum &>/dev/null; then
+    output="$(sha256sum --quiet)" || return 1
+    echo "${output% *}"
+  else
+    return 1
+  fi
+}
+
 compute_md5() {
+  local output
   if type md5 &>/dev/null; then
     md5 -q
   elif type openssl &>/dev/null; then
-    local output="$(openssl md5)"
+    output="$(openssl md5)" || return 1
     echo "${output##* }"
   elif type md5sum &>/dev/null; then
-    local output="$(md5sum -b)"
+    output="$(md5sum -b)" || return 1
     echo "${output% *}"
   else
     return 1
@@ -175,8 +198,9 @@ compute_md5() {
 }
 
 verify_checksum() {
-  # If there's no MD5 support, return success
-  [ -n "$HAS_MD5_SUPPORT" ] || return 0
+  # If there's no SHA2 support, return success
+  [ -n "$HAS_SHA2_SUPPORT" ] || return 0
+  local checksum_command="compute_sha2"
 
   # If the specified filename doesn't exist, return success
   local filename="$1"
@@ -186,8 +210,14 @@ verify_checksum() {
   local expected_checksum=`echo "$2" | tr [A-Z] [a-z]`
   [ -n "$expected_checksum" ] || return 0
 
+  # If the checksum length is 32 chars, assume MD5, otherwise SHA2
+  if [ "${#expected_checksum}" -eq 32 ]; then
+    [ -n "$HAS_MD5_SUPPORT" ] || return 0
+    checksum_command="compute_md5"
+  fi
+
   # If the computed checksum is empty, return failure
-  local computed_checksum=`echo "$(compute_md5 < "$filename")" | tr [A-Z] [a-z]`
+  local computed_checksum=`echo "$($checksum_command < "$filename")" | tr [A-Z] [a-z]`
   [ -n "$computed_checksum" ] || return 1
 
   if [ "$expected_checksum" != "$computed_checksum" ]; then
@@ -221,7 +251,7 @@ http_head_curl() {
 }
 
 http_get_curl() {
-  curl -C - -o "${2:--}" -qsSLf "$1"
+  curl -q -o "${2:--}" -sSLf "$1"
 }
 
 http_head_wget() {
@@ -229,7 +259,7 @@ http_head_wget() {
 }
 
 http_get_wget() {
-  wget -nv -c -O "${2:--}" "$1"
+  wget -nv -O "${2:--}" "$1"
 }
 
 fetch_tarball() {
@@ -255,8 +285,9 @@ fetch_tarball() {
     tar_args="${tar_args/z/j}"
   fi
 
-  if ! symlink_tarball_from_cache "$package_filename" "$checksum"; then
-    echo "Downloading ${package_filename}..." >&2
+  if ! reuse_existing_tarball "$package_filename" "$checksum"; then
+    local tarball_filename=$(basename $package_url)
+    echo "Downloading ${tarball_filename}..." >&2
     http head "$mirror_url" &&
     download_tarball "$mirror_url" "$package_filename" "$checksum" ||
     download_tarball "$package_url" "$package_filename" "$checksum"
@@ -272,12 +303,18 @@ fetch_tarball() {
   } >&4 2>&1
 }
 
-symlink_tarball_from_cache() {
-  [ -n "$RUBY_BUILD_CACHE_PATH" ] || return 1
-
+reuse_existing_tarball() {
   local package_filename="$1"
-  local cached_package_filename="${RUBY_BUILD_CACHE_PATH}/$package_filename"
   local checksum="$2"
+
+  # Reuse existing file in build location
+  if [ -e "$package_filename" ] && verify_checksum "$package_filename" "$checksum"; then
+    return 0
+  fi
+
+  # Reuse previously downloaded file in cache location
+  [ -n "$RUBY_BUILD_CACHE_PATH" ] || return 1
+  local cached_package_filename="${RUBY_BUILD_CACHE_PATH}/$package_filename"
 
   [ -e "$cached_package_filename" ] || return 1
   verify_checksum "$cached_package_filename" "$checksum" >&4 2>&1 || return 1
@@ -330,7 +367,14 @@ fetch_git() {
       popd >&4
     fi
 
-    git clone --depth 1 --branch "$git_ref" "$git_url" "${package_name}" >&4 2>&1
+    if [ -e "${package_name}" ]; then
+      ( cd "${package_name}"
+        git fetch --depth 1 origin "+${git_ref}"
+        git checkout -q -B "$git_ref" "origin/${git_ref}"
+      ) >&4 2>&1
+    else
+      git clone --depth 1 --branch "$git_ref" "$git_url" "${package_name}" >&4 2>&1
+    fi
   else
     echo "error: please install \`git\` and try again" >&2
     exit 1
@@ -398,6 +442,8 @@ build_package_standard() {
   local PACKAGE_CONFIGURE_OPTS_ARRAY="${package_var_name}_CONFIGURE_OPTS_ARRAY[@]"
   local PACKAGE_MAKE_OPTS="${package_var_name}_MAKE_OPTS"
   local PACKAGE_MAKE_OPTS_ARRAY="${package_var_name}_MAKE_OPTS_ARRAY[@]"
+  local PACKAGE_MAKE_INSTALL_OPTS="${package_var_name}_MAKE_INSTALL_OPTS"
+  local PACKAGE_MAKE_INSTALL_OPTS_ARRAY="${package_var_name}_MAKE_INSTALL_OPTS_ARRAY[@]"
   local PACKAGE_CFLAGS="${package_var_name}_CFLAGS"
 
   [ "$package_var_name" = "RUBY" ] && use_homebrew_readline || true
@@ -409,7 +455,7 @@ build_package_standard() {
   ) >&4 2>&1
 
   { "$MAKE" $MAKE_OPTS ${!PACKAGE_MAKE_OPTS} "${!PACKAGE_MAKE_OPTS_ARRAY}"
-    "$MAKE" install
+    "$MAKE" install $MAKE_INSTALL_OPTS ${!PACKAGE_MAKE_INSTALL_OPTS} "${!PACKAGE_MAKE_INSTALL_OPTS_ARRAY}"
   } >&4 2>&1
 }
 
@@ -505,21 +551,41 @@ build_package_jruby() {
   build_package_copy
   cd "${PREFIX_PATH}/bin"
   ln -fs jruby ruby
+  chmod +x ruby
   install_jruby_launcher
   remove_windows_files
   fix_jruby_shebangs
 }
 
+graal_architecture() {
+  if [ "$(uname -m)" != "x86_64" ]; then
+    echo "no nightly builds available" >&2
+    exit 1
+  fi
+
+  case "$(uname -s)" in
+  "Darwin") echo "macosx-x86_64";;
+  "Linux") echo "linux-x86_64";;
+  *)
+    echo "no nightly builds available" >&2
+    exit 1;;
+  esac
+}
+
 install_jruby_launcher() {
-  cd "${PREFIX_PATH}/bin"
-  { ./ruby gem install jruby-launcher
-  } >&4 2>&1
+  # If this version of JRuby has been modified for Graal, don't overwrite the
+  # launcher scripts
+  if ! grep -q graalvm "${PREFIX_PATH}/bin/jruby"; then
+    cd "${PREFIX_PATH}/bin"
+    { ./ruby gem install jruby-launcher
+    } >&4 2>&1
+  fi
 }
 
 fix_jruby_shebangs() {
   for file in "${PREFIX_PATH}/bin"/*; do
     if [ "$(head -c 20 "$file")" = "#!/usr/bin/env jruby" ]; then
-      sed -i.bak -E "1s:.+:#\!${PREFIX_PATH}/bin/jruby:" "$file"
+      sed -i.bak "1 s:.*:#\!${PREFIX_PATH}\/bin\/jruby:" "$file"
       rm "$file".bak
     fi
   done
@@ -558,7 +624,9 @@ fix_rbx_gem_binstubs() {
     for file in "$gemdir"/*; do
       binstub="${bindir}/${file##*/}"
       rm -f "$binstub"
-      sed -E "s:^#\!.+:#\!${bindir}/ruby:" < "$file" > "$binstub"
+      { echo "#!${bindir}/ruby"
+        cat "$file"
+      } > "$binstub"
       chmod +x "$binstub"
     done
     rm -rf "$gemdir"
@@ -573,19 +641,29 @@ fix_rbx_irb() {
     true
 }
 
+require_java7() {
+  local version="$(java -version 2>&1 | head -1)"
+  if [[ $version != *1.[789]* ]]; then
+    colorize 1 "ERROR" >&3
+    echo ": Java 7 required. Please install a 1.7-compatible JRE." >&3
+    return 1
+  fi
+}
+
 require_gcc() {
   local gcc="$(locate_gcc || true)"
 
   if [ -z "$gcc" ]; then
-    local esc=$'\033'
     { echo
-      echo "${esc}[1mERROR${esc}[0m: This package must be compiled with GCC, but ruby-build couldn't"
+      colorize 1 "ERROR"
+      echo ": This package must be compiled with GCC, but ruby-build couldn't"
       echo "find a suitable \`gcc\` executable on your system. Please install GCC"
       echo "and try again."
       echo
 
       if [ "$(uname -s)" = "Darwin" ]; then
-        echo "${esc}[1mDETAILS${esc}[0m: Apple no longer includes the official GCC compiler with Xcode"
+        colorize 1 "DETAILS"
+        echo ": Apple no longer includes the official GCC compiler with Xcode"
         echo "as of version 4.2. Instead, the \`gcc\` executable is a symlink to"
         echo "\`llvm-gcc\`, a modified version of GCC which outputs LLVM bytecode."
         echo
@@ -595,14 +673,18 @@ require_gcc() {
         echo "GCC compiler installed on your system."
         echo
 
+        colorize 1 "TO FIX THE PROBLEM"
         if type brew &>/dev/null; then
-          echo "${esc}[1mTO FIX THE PROBLEM${esc}[0m: Install Homebrew's apple-gcc42 package with this"
-          echo "command: ${esc}[4mbrew tap homebrew/dupes ; brew install apple-gcc42${esc}[0m"
+          echo ": Install Homebrew's apple-gcc42 package with this"
+          echo -n "command: "
+          colorize 4 "brew tap homebrew/dupes ; brew install apple-gcc42"
         else
-          echo "${esc}[1mTO FIX THE PROBLEM${esc}[0m: Install the official GCC compiler using these"
-          echo "packages: ${esc}[4mhttps://github.com/kennethreitz/osx-gcc-installer/downloads${esc}[0m"
+          echo ": Install the official GCC compiler using these"
+          echo -n "packages: "
+          colorize 4 "https://github.com/kennethreitz/osx-gcc-installer/downloads"
         fi
 
+        echo
         echo
         echo "You will need to install the official GCC compiler to build older"
         echo "versions of Ruby even if you have installed Apple's Command Line Tools"
@@ -796,9 +878,15 @@ isolated_gem_install() {
 }
 
 apply_ruby_patch() {
+  local patchfile
   case "$1" in
   ruby-* | jruby-* | rubinius-* )
-    patch -p0 -i "${2:--}"
+    patchfile="$(mktemp "${TMP}/ruby-patch.XXXXXX")"
+    cat "${2:--}" >"$patchfile"
+
+    local striplevel=0
+    grep -q '^diff --git a/' "$patchfile" && striplevel=1
+    patch -p$striplevel --force -i "$patchfile"
     ;;
   esac
 }
@@ -870,7 +958,7 @@ done
 DEFINITION_PATH="${ARGUMENTS[0]}"
 if [ -z "$DEFINITION_PATH" ]; then
   usage
-elif [ ! -e "$DEFINITION_PATH" ]; then
+elif [ ! -f "$DEFINITION_PATH" ]; then
   BUILTIN_DEFINITION_PATH="${RUBY_BUILD_ROOT}/share/ruby-build/${DEFINITION_PATH}"
   if [ -e "$BUILTIN_DEFINITION_PATH" ]; then
     DEFINITION_PATH="$BUILTIN_DEFINITION_PATH"
@@ -932,11 +1020,17 @@ if [ -n "$RUBY_BUILD_SKIP_MIRROR" ]; then
   unset RUBY_BUILD_MIRROR_URL
 fi
 
+if echo test | compute_sha2 >/dev/null; then
+  HAS_SHA2_SUPPORT=1
+else
+  unset HAS_SHA2_SUPPORT
+  unset RUBY_BUILD_MIRROR_URL
+fi
+
 if echo test | compute_md5 >/dev/null; then
   HAS_MD5_SUPPORT=1
 else
   unset HAS_MD5_SUPPORT
-  unset RUBY_BUILD_MIRROR_URL
 fi
 
 SEED="$(date "+%Y%m%d%H%M%S").$$"
