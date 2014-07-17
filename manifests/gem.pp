@@ -53,7 +53,7 @@ define ruby_build::gem(
 
 	exec { "Install ${gem} into ruby_build ${definition} for ${name}":
 		command     => "/usr/local/bin/chruby-exec $definition -- gem install $quoted_gem $version_opt $source_opt $docs_opt",
-		unless      => "/usr/bin/test $(/bin/bash -l -- /usr/local/bin/chruby-exec $definition -- gem list --installed $quoted_gem $version_opt) = true",
+		unless      => "/usr/bin/test $(/bin/bash -l -c 'chruby $definition && gem list --installed $quoted_gem $version_opt' 2>/dev/null) = true",
 		require     => Noop["ruby_build/definition/installed:${definition}"],
 		environment => "SHELL=/bin/bash",
 	}
