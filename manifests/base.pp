@@ -30,7 +30,7 @@ class ruby_build::base {
 			group   => "root",
 			recurse => true;
 	}
-	
+
 	# This is the barrier that ensures that all the packages needed to build
 	# are available *before* we try to actually build anything.
 	noop { "ruby_build/packages/installed": }
