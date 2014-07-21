@@ -25,7 +25,7 @@ define ruby_build::install($definition, $mirror = undef) {
 		}
 	}
 
-	class { "ruby_build::packages::${os}_${pkg_flavour}": }
+	include "ruby_build::packages::${os}_${pkg_flavour}"
 
 	# Let people use a local mirror for their tarball downloads if they so
 	# choose.  Just remember that the files in this mirror need to be named
