@@ -34,4 +34,7 @@ class ruby_build::base {
 	# This is the barrier that ensures that all the packages needed to build
 	# are available *before* we try to actually build anything.
 	noop { "ruby_build/packages/installed": }
+
+	# Part of ruby-build-wrapper uses chruby-exec to do things
+	include chruby::install
 }
