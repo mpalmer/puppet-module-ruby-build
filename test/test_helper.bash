@@ -10,7 +10,7 @@ if [ "$FIXTURE_ROOT" != "$BATS_TEST_DIRNAME/fixtures" ]; then
 fi
 
 teardown() {
-  rm -fr "$TMP"/*
+  rm -fr "${TMP:?}"/*
 }
 
 stub() {
@@ -68,6 +68,12 @@ install_fixture() {
 assert() {
   if ! "$@"; then
     flunk "failed: $@"
+  fi
+}
+
+refute() {
+  if "$@"; then
+    flunk "expected to fail: $@"
   fi
 }
 

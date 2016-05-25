@@ -2,9 +2,10 @@
 #
 # Summary: Install a Ruby version using ruby-build
 #
-# Usage: rbenv install [-f] [-kvp] <version>
-#        rbenv install [-f] [-kvp] <definition-file>
+# Usage: rbenv install [-f|-s] [-kpv] <version>
+#        rbenv install [-f|-s] [-kpv] <definition-file>
 #        rbenv install -l|--list
+#        rbenv install --version
 #
 #   -l/--list          List all available versions
 #   -f/--force         Install even if the version appears to be installed already
@@ -14,19 +15,16 @@
 #
 #   -k/--keep          Keep source tree in $RBENV_BUILD_ROOT after installation
 #                      (defaults to $RBENV_ROOT/sources)
-#   -v/--verbose       Verbose mode: print compilation status to stdout
 #   -p/--patch         Apply a patch from stdin before building
+#   -v/--verbose       Verbose mode: print compilation status to stdout
+#   --version          Show version of ruby-build
 #
 # For detailed information on installing Ruby versions with
 # ruby-build, including a list of environment variables for adjusting
-# compilation, see: https://github.com/sstephenson/ruby-build#usage
+# compilation, see: https://github.com/rbenv/ruby-build#usage
 #
 set -e
 [ -n "$RBENV_DEBUG" ] && set -x
-
-if [ -z "$RBENV_ROOT" ]; then
-  RBENV_ROOT="${HOME}/.rbenv"
-fi
 
 # Add `share/ruby-build/` directory from each rbenv plugin to the list of
 # paths where build definitions are looked up.
@@ -39,6 +37,13 @@ shopt -u nullglob
 
 # Provide rbenv completions
 if [ "$1" = "--complete" ]; then
+  echo --list
+  echo --force
+  echo --skip-existing
+  echo --keep
+  echo --patch
+  echo --verbose
+  echo --version
   exec ruby-build --definitions
 fi
 
@@ -46,8 +51,7 @@ fi
 eval "$(ruby-build --lib)"
 
 usage() {
-  # We can remove the sed fallback once rbenv 0.4.0 is widely available.
-  rbenv-help install 2>/dev/null || sed -ne '/^#/!q;s/.//;s/.//;1,4d;p' < "$0"
+  rbenv-help install 2>/dev/null
   [ -z "$1" ] || exit "$1"
 }
 

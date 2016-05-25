@@ -1,13 +1,13 @@
 # ruby-build
 
-ruby-build is an [rbenv](https://github.com/sstephenson/rbenv) plugin that
+ruby-build is an [rbenv](https://github.com/rbenv/rbenv) plugin that
 provides an `rbenv install` command to compile and install different versions
 of Ruby on UNIX-like systems.
 
 You can also use ruby-build without rbenv in environments where you need
 precise control over Ruby version installation.
 
-See the [list of releases](https://github.com/sstephenson/ruby-build/releases)
+See the [list of releases](https://github.com/rbenv/ruby-build/releases)
 for changes in each version.
 
 
@@ -18,7 +18,7 @@ for changes in each version.
 Installing ruby-build as an rbenv plugin will give you access to the `rbenv
 install` command.
 
-    git clone https://github.com/sstephenson/ruby-build.git ~/.rbenv/plugins/ruby-build
+    git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
 
 This will install the latest development version of ruby-build into the
 `~/.rbenv/plugins/ruby-build` directory. From that directory, you can check out
@@ -31,7 +31,7 @@ Installing ruby-build as a standalone program will give you access to the
 `ruby-build` command for precise control over Ruby version installation. If you
 have rbenv installed, you will also be able to use the `rbenv install` command.
 
-    git clone https://github.com/sstephenson/ruby-build.git
+    git clone https://github.com/rbenv/ruby-build.git
     cd ruby-build
     ./install.sh
 
@@ -62,7 +62,7 @@ Or, if you would like to install the latest development release:
 ## Usage
 
 Before you begin, you should ensure that your build environment has the proper
-system dependencies for compiling the wanted Ruby version (see our [recommendations](https://github.com/sstephenson/ruby-build/wiki#suggested-build-environment)).
+system dependencies for compiling the wanted Ruby version (see our [recommendations](https://github.com/rbenv/ruby-build/wiki#suggested-build-environment)).
 
 ### Using `rbenv install` with rbenv
 
@@ -103,7 +103,7 @@ versions of Ruby that are not yet supported by ruby-build.
 See the [ruby-build built-in definitions][definitions] as a starting point for
 custom definition files.
 
-[definitions]: https://github.com/sstephenson/ruby-build/tree/master/share/ruby-build
+[definitions]: https://github.com/rbenv/ruby-build/tree/master/share/ruby-build
 
 ### Special environment variables
 
@@ -179,7 +179,7 @@ mirror and use official URLs instead. You can force ruby-build to bypass the
 mirror by setting the `RUBY_BUILD_SKIP_MIRROR` environment variable.
 
 The official ruby-build download mirror is sponsored by
-[37signals](http://37signals.com/).
+[Basecamp](https://basecamp.com/).
 
 ### Package download caching
 
@@ -207,33 +207,8 @@ variable when using `--keep` with `ruby-build`.
 
 Please see the [ruby-build wiki][wiki] for solutions to common problems.
 
-[wiki]: https://github.com/sstephenson/ruby-build/wiki
+[wiki]: https://github.com/rbenv/ruby-build/wiki
 
 If you can't find an answer on the wiki, open an issue on the [issue
-tracker](https://github.com/sstephenson/ruby-build/issues). Be sure to include
+tracker](https://github.com/rbenv/ruby-build/issues). Be sure to include
 the full build log for build failures.
-
-
-### License
-
-(The MIT License)
-
-Copyright (c) 2012-2013 Sam Stephenson
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.

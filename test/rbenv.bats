@@ -97,7 +97,7 @@ OUT
 }
 
 @test "no build definitions from plugins" {
-  assert [ ! -e "${RBENV_ROOT}/plugins" ]
+  refute [ -e "${RBENV_ROOT}/plugins" ]
   stub_ruby_build 'echo $RUBY_BUILD_DEFINITIONS'
 
   run rbenv-install 2.1.2
@@ -141,6 +141,13 @@ OUT
   run rbenv-install --complete
   assert_success
   assert_output <<OUT
+--list
+--force
+--skip-existing
+--keep
+--patch
+--verbose
+--version
 
 ${RBENV_ROOT}/plugins/bar/share/ruby-build
 ${RBENV_ROOT}/plugins/foo/share/ruby-build
@@ -149,39 +156,61 @@ OUT
 
 @test "not enough arguments for rbenv-install" {
   stub_ruby_build
+  stub rbenv-help 'install : true'
+
   run rbenv-install
   assert_failure
-  assert_output_contains 'Usage: rbenv install'
+  unstub rbenv-help
 }
 
 @test "too many arguments for rbenv-install" {
   stub_ruby_build
+  stub rbenv-help 'install : true'
+
   run rbenv-install 2.1.1 2.1.2
   assert_failure
-  assert_output_contains 'Usage: rbenv install'
+  unstub rbenv-help
 }
 
 @test "show help for rbenv-install" {
   stub_ruby_build
+  stub rbenv-help 'install : true'
+
   run rbenv-install -h
   assert_success
+  unstub rbenv-help
+}
+
+@test "rbenv-install has usage help preface" {
+  run head "$(which rbenv-install)"
   assert_output_contains 'Usage: rbenv install'
 }
 
 @test "not enough arguments rbenv-uninstall" {
+  stub rbenv-help 'uninstall : true'
+
   run rbenv-uninstall
   assert_failure
-  assert_output_contains 'Usage: rbenv uninstall'
+  unstub rbenv-help
 }
 
 @test "too many arguments for rbenv-uninstall" {
+  stub rbenv-help 'uninstall : true'
+
   run rbenv-uninstall 2.1.1 2.1.2
   assert_failure
-  assert_output_contains 'Usage: rbenv uninstall'
+  unstub rbenv-help
 }
 
 @test "show help for rbenv-uninstall" {
+  stub rbenv-help 'uninstall : true'
+
   run rbenv-uninstall -h
   assert_success
+  unstub rbenv-help
+}
+
+@test "rbenv-uninstall has usage help preface" {
+  run head "$(which rbenv-uninstall)"
   assert_output_contains 'Usage: rbenv uninstall'
 }

@@ -31,7 +31,7 @@ fi
 
 pushd "$(brew --prefix)"
 
-git fetch -q origin master
+git fetch -q --unshallow origin master 2>/dev/null || git fetch -q origin master
 
 branch="${brew_name}-${version}"
 git checkout -q -B "$branch" origin/master
@@ -46,7 +46,7 @@ rm -f "${formula}.bak"
 git commit -m "${brew_name} ${version#v}" -- "$formula"
 # hackish way of getting the git remote name for user's fork
 fork_remote="$(hub fork 2>&1 | grep -oE 'remote:? \S+' | tail -1 | awk '{print $2}')"
-git push -u "$fork_remote" "$branch"
+git push -u "$fork_remote" HEAD
 hub pull-request -m "${brew_name} ${version#v}"
 
 git checkout -q -
