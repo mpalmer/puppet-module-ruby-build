@@ -8,6 +8,7 @@ export CC=cc
 export -n RUBY_CONFIGURE_OPTS
 
 setup() {
+  ensure_not_found_in_path aria2c
   mkdir -p "$INSTALL_ROOT"
   stub md5 false
   stub curl false
@@ -61,6 +62,7 @@ assert_build_log() {
   cached_tarball "yaml-0.1.6"
   cached_tarball "ruby-2.0.0"
 
+  stub uname '-s : echo Linux'
   stub brew false
   stub_make_install
   stub_make_install
@@ -68,6 +70,7 @@ assert_build_log() {
   install_fixture definitions/needs-yaml
   assert_success
 
+  unstub uname
   unstub make
 
   assert_build_log <<OUT
@@ -84,6 +87,7 @@ OUT
   cached_tarball "yaml-0.1.6"
   cached_tarball "ruby-2.0.0"
 
+  stub uname '-s : echo Linux'
   stub brew false
   stub_make_install
   stub_make_install
@@ -92,6 +96,7 @@ OUT
   TMPDIR="$TMP" install_fixture --patch definitions/needs-yaml <<<""
   assert_success
 
+  unstub uname
   unstub make
   unstub patch
 
@@ -110,6 +115,7 @@ OUT
   cached_tarball "yaml-0.1.6"
   cached_tarball "ruby-2.0.0"
 
+  stub uname '-s : echo Linux'
   stub brew false
   stub_make_install
   stub_make_install
@@ -118,6 +124,7 @@ OUT
   TMPDIR="$TMP" install_fixture --patch definitions/needs-yaml <<<"diff --git a/script.rb"
   assert_success
 
+  unstub uname
   unstub make
   unstub patch
 
@@ -138,12 +145,14 @@ OUT
   brew_libdir="$TMP/homebrew-yaml"
   mkdir -p "$brew_libdir"
 
+  stub uname '-s : echo Linux'
   stub brew "--prefix libyaml : echo '$brew_libdir'" false
   stub_make_install
 
   install_fixture definitions/needs-yaml
   assert_success
 
+  unstub uname
   unstub brew
   unstub make
 
@@ -203,7 +212,7 @@ OUT
 @test "number of CPU cores defaults to 2" {
   cached_tarball "ruby-2.0.0"
 
-  stub uname '-s : echo Darwin'
+  stub uname '-s : echo Darwin' false
   stub sysctl false
   stub_make_install
 
@@ -226,7 +235,7 @@ OUT
 @test "number of CPU cores is detected on Mac" {
   cached_tarball "ruby-2.0.0"
 
-  stub uname '-s : echo Darwin'
+  stub uname '-s : echo Darwin' false
   stub sysctl '-n hw.ncpu : echo 4'
   stub_make_install
 
@@ -250,7 +259,7 @@ OUT
 @test "number of CPU cores is detected on FreeBSD" {
   cached_tarball "ruby-2.0.0"
 
-  stub uname '-s : echo FreeBSD'
+  stub uname '-s : echo FreeBSD' false
   stub sysctl '-n hw.ncpu : echo 1'
   stub_make_install
 
@@ -274,6 +283,7 @@ OUT
 @test "setting RUBY_MAKE_INSTALL_OPTS to a multi-word string" {
   cached_tarball "ruby-2.0.0"
 
+  stub uname '-s : echo Linux'
   stub_make_install
 
   export RUBY_MAKE_INSTALL_OPTS="DOGE=\"such wow\""
@@ -282,6 +292,7 @@ install_package "ruby-2.0.0" "http://ruby-lang.org/ruby/2.0/ruby-2.0.0.tar.gz"
 DEF
   assert_success
 
+  unstub uname
   unstub make
 
   assert_build_log <<OUT
@@ -294,6 +305,7 @@ OUT
 @test "setting MAKE_INSTALL_OPTS to a multi-word string" {
   cached_tarball "ruby-2.0.0"
 
+  stub uname '-s : echo Linux'
   stub_make_install
 
   export MAKE_INSTALL_OPTS="DOGE=\"such wow\""
@@ -302,6 +314,7 @@ install_package "ruby-2.0.0" "http://ruby-lang.org/ruby/2.0/ruby-2.0.0.tar.gz"
 DEF
   assert_success
 
+  unstub uname
   unstub make
 
   assert_build_log <<OUT
@@ -323,7 +336,7 @@ OUT
 @test "make on FreeBSD 9 defaults to gmake" {
   cached_tarball "ruby-2.0.0"
 
-  stub uname "-s : echo FreeBSD" "-r : echo 9.1"
+  stub uname "-s : echo FreeBSD" "-r : echo 9.1" false
   MAKE=gmake stub_make_install
 
   MAKE= install_fixture definitions/vanilla-ruby
@@ -336,7 +349,19 @@ OUT
 @test "make on FreeBSD 10" {
   cached_tarball "ruby-2.0.0"
 
-  stub uname "-s : echo FreeBSD" "-r : echo 10.0-RELEASE"
+  stub uname "-s : echo FreeBSD" "-r : echo 10.0-RELEASE" false
+  stub_make_install
+
+  MAKE= install_fixture definitions/vanilla-ruby
+  assert_success
+
+  unstub uname
+}
+
+@test "make on FreeBSD 11" {
+  cached_tarball "ruby-2.0.0"
+
+  stub uname "-s : echo FreeBSD" "-r : echo 11.0-RELEASE" false
   stub_make_install
 
   MAKE= install_fixture definitions/vanilla-ruby
@@ -354,6 +379,7 @@ apply -p1 -i /my/patch.diff
 exec ./configure "\$@"
 CONF
 
+  stub uname '-s : echo Linux'
   stub apply 'echo apply "$@" >> build.log'
   stub_make_install
 
@@ -363,6 +389,7 @@ install_package "ruby-2.0.0" "http://ruby-lang.org/pub/ruby-2.0.0.tar.gz"
 DEF
   assert_success
 
+  unstub uname
   unstub make
   unstub apply
 
