@@ -8,7 +8,6 @@ export CC=cc
 export -n RUBY_CONFIGURE_OPTS
 
 setup() {
-  ensure_not_found_in_path aria2c
   mkdir -p "$INSTALL_ROOT"
   stub md5 false
   stub curl false
@@ -472,7 +471,7 @@ DEF
 
   assert_build_log <<OUT
 bundle --path=vendor/bundle
-rubinius-2.0.0: --prefix=$INSTALL_ROOT RUBYOPT=-rubygems
+rubinius-2.0.0: --prefix=$INSTALL_ROOT RUBYOPT=-rrubygems
 bundle exec rake install
 OUT
 }
@@ -620,6 +619,31 @@ require_java7
 install_package "jruby-9000.dev" "http://ci.jruby.org/jruby-dist-9000.dev-bin.tar.gz" jruby
 DEF
   assert_success
+}
+
+@test "JRuby Java 9 version string" {
+  cached_tarball "jruby-9000.dev" bin/jruby
+
+  stub java '-version : echo java version "9" >&2'
+
+  run_inline_definition <<DEF
+require_java7
+install_package "jruby-9000.dev" "http://ci.jruby.org/jruby-dist-9000.dev-bin.tar.gz" jruby
+DEF
+  assert_success
+}
+
+@test "TruffleRuby post-install hook" {
+  executable "${RUBY_BUILD_CACHE_PATH}/truffleruby-test/lib/truffle/post_install_hook.sh" <<OUT
+echo Running post-install hook
+OUT
+  cached_tarball "truffleruby-test" bin/truffleruby
+
+  run_inline_definition <<DEF
+install_package "truffleruby-test" "URL" truffleruby
+DEF
+  assert_success
+  assert_output_contains "Running post-install hook"
 }
 
 @test "non-writable TMPDIR aborts build" {
