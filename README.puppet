@@ -12,9 +12,7 @@ This module installs things into the following locations:
   Potentially useful if you'd like to build a Ruby by hand (madness!)
 
 * `/usr/local/sbin/ruby-build-wrapper`: A small script that uses
-  `ruby-build` to install a Ruby, and then creates an `environment.sh` file
-  containing the environment variables required to enable that version of
-  Ruby.
+  `ruby-build` to install a Ruby and make sure bundler is available.
 
 * `/usr/local/share/ruby_build`: The definitions that specify how to install
   a given Ruby version.
@@ -23,10 +21,6 @@ In addition, when a Ruby version is installed (using `ruby-build-wrapper` or
 `ruby_build::install`), the following files/directories are created:
     
 * `/usr/local/lib/rubies/<version>`: A Ruby.
-
-* `/usr/local/lib/rubies/<version>/environment.sh`: A bourne shell fragment
-  which exports a set of environment variables, which (taken together) cause
-  the given version of Ruby to be enabled by default.
 
 
 # Global installation
@@ -50,7 +44,4 @@ Simply
 
 This will use the definition file `<definition>` to build a Ruby and install
 it into `/usr/local/lib/rubies/<definition>`.  It will also install the
-`bundler` gem and write `/usr/local/lib/rubies/<definition>/environment.sh`,
-which includes a set of bourne shell environment variable definitions which,
-when included in a shell session, will activate that Ruby and make it
-available as the default in that shell.
+`bundler` gem.
