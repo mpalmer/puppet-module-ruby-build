@@ -4,13 +4,13 @@ class ruby_build::base {
 			ensure  => file,
 			source  => "puppet:///modules/ruby_build/usr/local/bin/ruby-build",
 			links   => follow,
-			mode    => 0555,
+			mode    => "0555",
 			owner   => "root",
 			group   => "root";
 		"/usr/local/sbin/ruby-build-wrapper":
 			ensure  => file,
 			source  => "puppet:///modules/ruby_build/usr/local/sbin/ruby-build-wrapper",
-			mode    => 0555,
+			mode    => "0555",
 			owner   => "root",
 			group   => "root",
 			require => [ File["/usr/local/bin/ruby-build"],
@@ -18,14 +18,14 @@ class ruby_build::base {
 			             File["/usr/local/lib/rubies"] ];
 		"/usr/local/lib/rubies":
 			ensure  => directory,
-			mode    => 0755,
+			mode    => "0755",
 			owner   => "root",
 			group   => "root";
 		"/usr/local/share/ruby-build":
 			ensure  => directory,
 			source  => "puppet:///modules/ruby_build/usr/local/share/ruby-build",
 			links   => follow,
-			mode    => 0555,
+			mode    => "0555",
 			owner   => "root",
 			group   => "root",
 			recurse => true;
